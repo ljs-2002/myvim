@@ -259,6 +259,7 @@ void __fs_edit_delete(fh_p fp)
 void __fs_edit_insert(fh_p fp, char c)
 {
     //先在fp中保存当前的字符
+    char d;
     if(c==9){//Tab替换为4个空格
         char _c=' ';
         int i;
@@ -266,6 +267,10 @@ void __fs_edit_insert(fh_p fp, char c)
             __fs_edit_rnode_insert_ch(fp->current_line, _c);
         }
     }else{
+        if((d=__fs_edit_in_table(c,sizeof(tofind),tofind,toreturn))!=0x0){
+            __fs_edit_rnode_insert_ch(fp->current_line,d);
+            fp->current_line->current--;
+        }
         __fs_edit_rnode_insert_ch(fp->current_line, c);
     }
     //处理显示
@@ -304,7 +309,7 @@ void __fs_edit(char filename[])
     fh_p fp;
     __fs_edit_read_text(filename, &fp);
     __fs_edit_print_txt(fp);
-    //system(STTY_US TTY_PATH);
+    static bool editable=false;
     system("stty raw");
     system("stty -echo");
     char c;
@@ -314,6 +319,7 @@ void __fs_edit(char filename[])
         { //方向键 or esc，目前先实现方向键
             if ((c = getchar()) != 91)
             {
+                editable = false;
                 ungetc(c, stdin);
             }
             else
@@ -325,23 +331,55 @@ void __fs_edit(char filename[])
         }
         else if (c == 127)
         { //退格
-            __fs_edit_delete(fp);
+            if(editable)
+                __fs_edit_delete(fp);
+            else
+                __fs_edit_move_cur(fp,__LEFT);
             continue;
         }
-        else if (c == 19)
+        else if (c == 19)//save
         {
             __fs_edit_save_txt(fp);
         }
         else if (c == 13)
         { //换行
-            __fs_edit_newline(fp);
+            if(editable)
+                __fs_edit_newline(fp);
+            else if(fp->current_line->next!=NULL){
+                __CUR_SET(fp->current_line->row+2,0);
+                fp->current_line=fp->current_line->next;
+                fp->current_line->current=-1;
+            }
+                
         }
         else if (0 < c < 127)
         {
-            __fs_edit_insert(fp, c);
+            if(editable)
+                __fs_edit_insert(fp, c);
+            else{
+                switch (c)
+                {
+                case 'i':case 'I':
+                    editable=true;
+                    break;
+                case 'h':case 'H':
+                    __fs_edit_move_cur(fp,__LEFT);
+                    break;
+                case 'l':case'L':
+                    __fs_edit_move_cur(fp,__RIGHT);
+                    break;
+                case 'j':case'J':
+                    __fs_edit_move_cur(fp,__DOWN);
+                    break;
+                case 'k':case'K':
+                    __fs_edit_move_cur(fp,__UP);
+                    break;
+                default:
+                    break;
+                }
+            }
         }
     }
-    //system(STTY_DEF TTY_PATH);
     system("stty echo");
     system("stty -raw");
     __fs_edit_free_fh(fp);
@@ -350,10 +388,16 @@ void __fs_edit(char filename[])
 
 int main(int argc,char*argv[])
 {
+
     if(argc<2){
         fprintf(stderr,"too few arguments! useage: %s <filename>\n",argv[0]);
         return 0;
     }
     __fs_edit(argv[1]);
+    /*
+    printf("input:\n");
+    char name[100];
+    scanf("%s",name);
+    __fs_edit(name);*/
     exit(0);
 }
