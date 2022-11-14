@@ -93,6 +93,9 @@ typedef rnode * rn_p;
 typedef struct _file_header fh;
 typedef fh * fh_p;
 
+static char tofind[]={'(','[','\"','{','\''};
+static char toreturn[]={')',']','\"','}','\''};
+
 void __fs_edit_init_rnode(rn_p *_rnp, rn_p prior, rn_p next, int row);
 void __fs_edit_free_rnode(rn_p rp);
 void __fs_edit_row_walk(rn_p rp, int row);
@@ -104,4 +107,5 @@ void __fs_edit_delete_row(fh_p fp, rn_p rp);
 bool __fs_edit_built_fhp(fh_p *fp, int fd);
 void errprint(char *s1, char *s2);
 bool __fs_get_stat_info(char path[],char d_name[],struct stat *info);
+char __fs_edit_in_table(char c, int size, char tofind[],char toreturn[]);
 #endif

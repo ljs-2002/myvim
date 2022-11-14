@@ -125,3 +125,13 @@ bool __fs_edit_built_fhp(fh_p *fp, int fd)
     }
     return false;
 }
+
+char __fs_edit_in_table(char c, int size, char tofind[],char toreturn[]){
+    int i;
+    for(i=0;i<size;i++){
+        if(c==tofind[i]){
+            return toreturn[i];
+        }
+    }
+    return 0x0;
+}
